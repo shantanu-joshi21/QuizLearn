@@ -1,0 +1,153 @@
+package com.example.quizapp;
+
+import androidx.appcompat.app.AppCompatActivity;
+
+import android.content.Intent;
+import android.graphics.Color;
+import android.os.Bundle;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.Button;
+import android.widget.LinearLayout;
+import android.widget.TextView;
+
+import java.util.ArrayList;
+
+public class displayTest extends AppCompatActivity {
+    AppUtility appUtility;
+    LinearLayout linearLayout;
+    Button submitTest;
+    final int totalQuestionsInQuiz=2;
+    TextView[][]relatedTextViews;
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_display_test);
+        this.setTitle("SUBJECTS");
+        linearLayout=findViewById(R.id.questions);
+        appUtility=new AppUtility();
+        appUtility.context=this;
+        relatedTextViews=new  TextView[totalQuestionsInQuiz][4];
+        Intent intent=getIntent();
+        String subject=intent.getStringExtra("selectedSubject");
+        String[][]allQuestions=appUtility.fileRead("sample_qb.txt");
+        ArrayList<Integer>arrayList = new ArrayList<>();
+        for(int i=0;i<allQuestions.length;i++){
+            String check=allQuestions[i][0]+" - "+allQuestions[i][2];
+            if(check.equals(subject)){
+                arrayList.add(i);
+            }
+        }
+
+        Integer[]allValid=new Integer[arrayList.size()];
+        int index=0;
+        for(Integer number:arrayList){
+            allValid[index]=number;
+            index++;
+        }
+        //linearLayout.removeAllViews();
+        TextView textView=findViewById(R.id.subjectName);
+        textView.setText(subject);
+
+        Integer[]randomizedQuestions=appUtility.giveRandomNumbers(allValid,totalQuestionsInQuiz);
+
+        Integer[]userChoice=new Integer[randomizedQuestions.length];
+
+        for(int i=0;i<randomizedQuestions.length;i++){
+            userChoice[i]=-1;
+        }
+
+        for(int i=0;i<randomizedQuestions.length;i++){
+            //String qno=randomizedQuestions[i].toString();
+            appUtility.addObject(linearLayout,"t",(i+1)+". "+allQuestions[randomizedQuestions[i]][1], appUtility.colour_White, appUtility.colour_Black, true);
+            for(int j=3;j<=6;j++){
+                char ch= (char) (j-3+'A');
+                String s=ch+". "+allQuestions[randomizedQuestions[i]][j];
+                TextView optionSelected=appUtility.addObject(linearLayout,"t",s, appUtility.colour_White, appUtility.colour_Blue,false );
+                relatedTextViews[i][j-3]=optionSelected;
+                optionSelected.setTag(i);
+                optionSelected.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        userChoice[(int) optionSelected.getTag()]=optionSelected.getText().charAt(0)-'A';
+                        int tagOfCurrentQuestion= (int) optionSelected.getTag();
+                        for(int j=0;j<4;j++){
+                            relatedTextViews[tagOfCurrentQuestion][j].setBackgroundColor(Color.parseColor(appUtility.colour_White));
+                        }
+                        optionSelected.setBackgroundColor(Color.parseColor(appUtility.colour_Yellow));
+                    }
+                });
+            }
+            appUtility.addObject(linearLayout,"t","==================");
+        }
+
+        submitTest=findViewById(R.id.submitTest);
+
+        submitTest.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                int score=0;
+                for(int i=0;i<randomizedQuestions.length;i++){
+                    int correctOption=allQuestions[randomizedQuestions[i]][7].charAt(0)-'A';
+                    if(correctOption==userChoice[i]){
+                        score++;
+                    }
+                    TextView correctAnswer=relatedTextViews[i][correctOption];
+                    correctAnswer.setBackgroundColor(Color.parseColor(appUtility.colour_Lime));
+                }
+                //appUtility.showToast(score+"");
+                appUtility.addObject(linearLayout,"t","Your score: "+score);
+                ((ViewGroup)submitTest.getParent()).removeView(submitTest);
+            }
+        });
+    }
+}
+
+
+
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".displayTest">
+
+    <ScrollView
+        android:id="@+id/scrollView2"
+        android:layout_width="357dp"
+        android:layout_height="581dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.5"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <LinearLayout
+            android:id="@+id/questions"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical" />
+    </ScrollView>
+
+    <Button
+        android:id="@+id/submitTest"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Submit Test"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/scrollView2"
+        app:layout_constraintVertical_bias="0.831" />
+
+    <TextView
+        android:id="@+id/subjectName"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintBottom_toTopOf="@+id/scrollView2"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.5"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+</androidx.constraintlayout.widget.ConstraintLayout>
